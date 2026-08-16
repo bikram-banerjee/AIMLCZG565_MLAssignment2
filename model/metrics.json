@@ -1,0 +1,42 @@
+{
+    "LogisticRegression": {
+        "Accuracy": 0.8457,
+        "AUC": 0.9079,
+        "Precision": 0.4182,
+        "Recall": 0.8147,
+        "F1": 0.5527,
+        "MCC": 0.5092
+    },
+    "DecisionTree": {
+        "Accuracy": 0.8782,
+        "AUC": 0.6933,
+        "Precision": 0.4785,
+        "Recall": 0.4518,
+        "F1": 0.4648,
+        "MCC": 0.3963
+    },
+    "KNN": {
+        "Accuracy": 0.8962,
+        "AUC": 0.8277,
+        "Precision": 0.599,
+        "Recall": 0.3403,
+        "F1": 0.434,
+        "MCC": 0.4001
+    },
+    "GaussianNB": {
+        "Accuracy": 0.8548,
+        "AUC": 0.8101,
+        "Precision": 0.4059,
+        "Recall": 0.5198,
+        "F1": 0.4559,
+        "MCC": 0.3774
+    },
+    "RandomForest": {
+        "Accuracy": 0.9051,
+        "AUC": 0.9286,
+        "Precision": 0.6938,
+        "Recall": 0.3384,
+        "F1": 0.4549,
+        "MCC": 0.4415
+    }
+}
