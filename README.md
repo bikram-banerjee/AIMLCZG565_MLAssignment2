@@ -1,4 +1,4 @@
-# Bank Marketing � Multi-Model Classification
+# Bank Marketing - Multi-Model Classification
 
 ## a. Problem Statement
 The objective of this project is to build a machine learning classification pipeline that predicts whether a bank client will subscribe to a term deposit (`yes` / `no`) based on demographic, campaign, and previous-contact features.  
@@ -13,7 +13,7 @@ Multiple classification algorithms are trained on the same dataset and rigorousl
 | **Source** | [UCI Machine Learning Repository](https://archive.ics.uci.edu/dataset/222/bank+marketing) |
 | **Instances** | 45,211 |
 | **Input Features** | 16 (9 categorical + 7 numeric) |
-| **Target Variable** | `y` � term deposit subscription (`yes` = 1, `no` = 0) |
+| **Target Variable** | `y` term deposit subscription (`yes` = 1, `no` = 0) |
 | **Class Balance** | Imbalanced (~11.5% positive / ~88.5% negative) |
 | **Notable Columns** | `duration` (last contact duration in seconds), `campaign` (number of contacts performed), `pdays` (days since last contact), `balance` (average yearly balance), `job`, `education`, `marital`, etc. |
 | **Use Case** | Direct marketing campaign optimization for a Portuguese banking institution. |
@@ -21,7 +21,7 @@ Multiple classification algorithms are trained on the same dataset and rigorousl
 ---
 
 ## c. GitHub Repository Link
-[https://github.com/<YOUR_USERNAME>/bank-marketing-classification](https://github.com/<YOUR_USERNAME>/bank-marketing-classification)
+https://github.com/bikram-banerjee/AIMLCZG565_MLAssignment2.git
 
 > **Repository contents:** `app.py`, `requirements.txt`, `README.md`, `test_data.csv`, and the `model/` directory containing training scripts, inference utilities, serialized `.joblib` pipelines, and `metrics.json`.
 
