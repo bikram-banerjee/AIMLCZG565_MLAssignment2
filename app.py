@@ -372,11 +372,28 @@ def main():
     # ------------------------------------------------------------------
     with tab3:
         st.header("📁 Batch Prediction")
-        st.markdown("Run predictions on multiple customers at once using test_data.csv.")
+        st.markdown("Upload a CSV file or use the default test dataset to run predictions on multiple customers at once.")
         
-        if os.path.exists("test_data.csv"):
+        # Dataset upload option
+        st.markdown("### 📤 Upload Dataset (Optional)")
+        st.info("ℹ️ Note: As Streamlit free tier has limited capacity, please upload only test data.")
+        uploaded_file = st.file_uploader("Choose a CSV file to upload", type=['csv'], key="batch_upload")
+        
+        # Determine data source
+        if uploaded_file is not None:
+            try:
+                test_df = pd.read_csv(uploaded_file)
+                st.success("✅ Successfully uploaded dataset!")
+            except Exception as e:
+                st.error(f"❌ Error reading uploaded file: {e}")
+                test_df = None
+        elif os.path.exists("test_data.csv"):
             test_df = pd.read_csv("test_data.csv")
-            
+            st.info("ℹ️ Using default test dataset (test_data.csv)")
+        else:
+            test_df = None
+        
+        if test_df is not None:
             # Summary cards
             st.markdown("### Dataset Summary")
             summary_col1, summary_col2, summary_col3 = st.columns(3)
@@ -387,7 +404,7 @@ def main():
                     subscribe_pct = (test_df["y"].sum() / len(test_df)) * 100
                     st.metric("Subscription Rate", f"{subscribe_pct:.1f}%")
             with summary_col3:
-                st.metric("Features", f"{len(test_df.columns) - 1}")
+                st.metric("Features", f"{len(test_df.columns) - (1 if 'y' in test_df.columns else 0)}")
             
             st.markdown("---")
             st.markdown("### Preview of Data")
@@ -406,56 +423,104 @@ def main():
             
             if run_batch:
                 with st.spinner("Processing predictions..."):
-                    pipe = load_pipeline(sel_batch)
-                    X = test_df.drop("y", axis=1)
-                    y_true = test_df["y"]
+                    try:
+                        pipe = load_pipeline(sel_batch)
+                        
+                        # Handle missing 'y' column gracefully
+                        has_target = "y" in test_df.columns
+                        X = test_df.drop("y", axis=1) if has_target else test_df.copy()
 
-                    preds = pipe.predict(X)
-                    proba = pipe.predict_proba(X)[:, 1]
+                        preds = pipe.predict(X)
+                        proba = pipe.predict_proba(X)[:, 1]
 
-                    out = test_df.copy()
-                    out["prediction"] = preds
-                    out["prob_subscribe"] = proba
-                    
-                    # Display results
-                    st.markdown("### Prediction Results")
-                    st.dataframe(out, use_container_width=True)
-                    
-                    # Calculate metrics
-                    from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
+                        out = test_df.copy()
+                        out["prediction"] = preds
+                        out["prob_subscribe"] = proba
+                        
+                        # Display results
+                        st.markdown("### Prediction Results")
+                        st.dataframe(out, use_container_width=True)
+                        
+                        # Calculate metrics if target is available
+                        if has_target:
+                            from sklearn.metrics import (
+                                accuracy_score, f1_score, precision_score, 
+                                recall_score, roc_auc_score, confusion_matrix, classification_report
+                            )
+                            import matplotlib.pyplot as plt
+                            import numpy as np
+                            import itertools
 
-                    acc = accuracy_score(y_true, preds)
-                    f1 = f1_score(y_true, preds)
-                    precision = precision_score(y_true, preds)
-                    recall = recall_score(y_true, preds)
-                    auc = roc_auc_score(y_true, proba)
-                    
-                    st.markdown("---")
-                    st.markdown("### 📊 Batch Performance Metrics")
-                    
-                    metric_col1, metric_col2, metric_col3, metric_col4, metric_col5 = st.columns(5)
-                    with metric_col1:
-                        st.metric("Accuracy", f"{acc:.4f}")
-                    with metric_col2:
-                        st.metric("Precision", f"{precision:.4f}")
-                    with metric_col3:
-                        st.metric("Recall", f"{recall:.4f}")
-                    with metric_col4:
-                        st.metric("F1 Score", f"{f1:.4f}")
-                    with metric_col5:
-                        st.metric("AUC", f"{auc:.4f}")
-                    
-                    # Download results
-                    st.markdown("---")
-                    csv = out.to_csv(index=False)
-                    st.download_button(
-                        label="📥 Download Results as CSV",
-                        data=csv,
-                        file_name="batch_predictions.csv",
-                        mime="text/csv"
-                    )
+                            y_true = test_df["y"]
+                            acc = accuracy_score(y_true, preds)
+                            f1 = f1_score(y_true, preds)
+                            precision = precision_score(y_true, preds)
+                            recall = recall_score(y_true, preds)
+                            auc = roc_auc_score(y_true, proba)
+                            
+                            st.markdown("---")
+                            st.markdown("### 📊 Batch Performance Metrics")
+                            
+                            metric_col1, metric_col2, metric_col3, metric_col4, metric_col5 = st.columns(5)
+                            with metric_col1:
+                                st.metric("Accuracy", f"{acc:.4f}")
+                            with metric_col2:
+                                st.metric("Precision", f"{precision:.4f}")
+                            with metric_col3:
+                                st.metric("Recall", f"{recall:.4f}")
+                            with metric_col4:
+                                st.metric("F1 Score", f"{f1:.4f}")
+                            with metric_col5:
+                                st.metric("AUC", f"{auc:.4f}")
+                            
+                            # Confusion Matrix & Classification Report
+                            st.markdown("---")
+                            st.markdown("### 🔢 Confusion Matrix & Classification Report")
+                            col_cm, col_cr = st.columns(2)
+                            
+                            with col_cm:
+                                st.markdown("**Confusion Matrix**")
+                                cm = confusion_matrix(y_true, preds)
+                                fig, ax = plt.subplots(figsize=(6, 5))
+                                im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+                                ax.figure.colorbar(im, ax=ax)
+                                classes = ['No', 'Yes']
+                                tick_marks = np.arange(len(classes))
+                                ax.set_xticks(tick_marks)
+                                ax.set_xticklabels(classes)
+                                ax.set_yticks(tick_marks)
+                                ax.set_yticklabels(classes)
+                                thresh = cm.max() / 2.
+                                for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+                                    ax.text(j, i, format(cm[i, j], 'd'),
+                                            horizontalalignment="center",
+                                            color="white" if cm[i, j] > thresh else "black")
+                                ax.set_ylabel('True Label')
+                                ax.set_xlabel('Predicted Label')
+                                plt.tight_layout()
+                                st.pyplot(fig)
+                            
+                            with col_cr:
+                                st.markdown("**Classification Report**")
+                                report = classification_report(y_true, preds, target_names=['No', 'Yes'], output_dict=True)
+                                cr_df = pd.DataFrame(report).transpose().round(4)
+                                st.dataframe(cr_df, use_container_width=True)
+                        else:
+                            st.info("ℹ️ Target column 'y' not found in dataset. Skipping evaluation metrics, confusion matrix, and classification report.")
+                        
+                        # Download results
+                        st.markdown("---")
+                        csv = out.to_csv(index=False)
+                        st.download_button(
+                            label="📥 Download Results as CSV",
+                            data=csv,
+                            file_name="batch_predictions.csv",
+                            mime="text/csv"
+                        )
+                    except Exception as e:
+                        st.error(f"❌ Error during prediction: {e}")
         else:
-            st.warning("⚠️ test_data.csv not found. Run training first with `python model/train_and_save.py`")
+            st.warning("⚠️ No dataset available. Please upload a CSV file or run training first with `python model/train_and_save.py`")
 
 if __name__ == "__main__":
     main()
