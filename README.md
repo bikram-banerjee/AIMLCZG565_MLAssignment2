@@ -1,26 +1,28 @@
-# Bank Marketing - Multi-Model Classification
+# 2025AC05271 ML Assignment 2
 
 ## a. Problem Statement
-The objective of this project is to build a machine learning classification pipeline that predicts whether a bank client will subscribe to a term deposit (`yes` / `no`) based on demographic, campaign, and previous-contact features.  
-Multiple classification algorithms are trained on the same dataset and rigorously compared using six standard evaluation metrics (Accuracy, AUC, Precision, Recall, F1, and MCC) to identify the best-performing model for this imbalanced, real-world marketing dataset.
+
+A retail bank runs telephone campaigns to promote term-deposit products, yet only a small fraction of contacted customers actually subscribe. Phoning every lead is expensive and inefficient, so the bank needs a way to rank prospects before the campaign begins. This project tackles that challenge as a supervised binary-classification task: given client demographics, financial attributes, and campaign-history variables, predict whether a contact will end in a subscription (`yes`) or not (`no`). Five fundamentally different learning algorithms are fitted on identical train/test splits and benchmarked side by side with six complementary metrics (Accuracy, AUC, Precision, Recall, F1, and Matthews Correlation Coefficient), so the final recommendation rests on evidence rather than intuition.
 
 ---
 
 ## b. Dataset Description
+
 | Property | Details |
 |----------|---------|
 | **Name** | Bank Marketing Dataset |
 | **Source** | [UCI Machine Learning Repository](https://archive.ics.uci.edu/dataset/222/bank+marketing) |
-| **Instances** | 45,211 |
+| **Instances** | 45,211 client-contact records |
 | **Input Features** | 16 (9 categorical + 7 numeric) |
-| **Target Variable** | `y` term deposit subscription (`yes` = 1, `no` = 0) |
-| **Class Balance** | Imbalanced (~11.5% positive / ~88.5% negative) |
-| **Notable Columns** | `duration` (last contact duration in seconds), `campaign` (number of contacts performed), `pdays` (days since last contact), `balance` (average yearly balance), `job`, `education`, `marital`, etc. |
-| **Use Case** | Direct marketing campaign optimization for a Portuguese banking institution. |
+| **Target Variable** | `y` — term deposit subscription (`yes` = 1, `no` = 0) |
+| **Class Balance** | Skewed, roughly 11.5% subscribers vs 88.5% non-subscribers |
+| **Notable Columns** | `duration` (seconds of the final call), `campaign` (contacts made this campaign), `pdays` (days since previous contact), `balance` (average yearly balance in euros), plus `job`, `marital`, `education`, `housing`, `loan` |
+| **Use Case** | Prioritizing call lists for a Portuguese bank's direct-marketing operation |
 
 ---
 
 ## c. GitHub Repository Link
+
 https://github.com/bikram-banerjee/AIMLCZG565_MLAssignment2.git
 
 > **Repository contents:** `app.py`, `requirements.txt`, `README.md`, `test_data.csv`, and the `model/` directory containing training scripts, inference utilities, serialized `.joblib` pipelines, and `metrics.json`.
@@ -45,25 +47,26 @@ https://github.com/bikram-banerjee/AIMLCZG565_MLAssignment2.git
 
 | ML Model Name | Observation about model performance |
 |---------------|-------------------------------------|
-| **Logistic Regression** | Provides a strong, interpretable linear baseline. With balanced class weights, it achieves respectable recall; however, its linear decision boundary struggles to model complex non-linear interactions (e.g., between `duration` and `campaign`) inherent in the campaign data, resulting in moderate precision and AUC. |
-| **Decision Tree** | Offers explicit, human-readable rules but is prone to overfitting on high-cardinality categorical variables such as `job` and training-set noise. Consequently, it exhibits lower generalization AUC and higher variance compared with ensemble methods. |
-| **kNN** | Performance is hindered by the curse of dimensionality that arises after one-hot encoding nine categorical features into a high-dimensional sparse space. Euclidean distance becomes less discriminative, producing class boundaries that are inferior to tree-based and probabilistic models on this dataset. |
-| **Naive Bayes** | Extremely fast to train, but its conditional independence assumption is severely violated by correlated financial attributes (e.g., `housing` and `loan`) and by binary one-hot encoded columns. It tends toward skewed probability estimates, yielding reasonable recall but comparatively low precision. |
-| **Random Forest (Ensemble)** | Aggregates multiple decorrelated trees via bagging, making it robust to mixed data types and feature interactions. It mitigates overfitting on the imbalanced classes and delivers the best overall trade-off across all six metrics�particularly excelling in AUC and F1. |
-| **Overall Winner for your dataset?** | **Random Forest (Ensemble)**. It consistently achieves the highest AUC and the strongest MCC on this dataset, confirming it as the most reliable classifier for predicting term-deposit subscriptions among the five models evaluated. |
+| **Logistic Regression** | Delivers a transparent linear benchmark and, thanks to balanced class weights, posts the highest recall of the group (0.81). Its straight-line decision surface, however, cannot bend around interactions such as `duration` × `campaign`, so precision and AUC stay in the middle of the pack. |
+| **Decision Tree** | Produces rules a marketing manager could read aloud, but the unconstrained splits latch onto noise in high-cardinality fields like `job`. The result is the weakest AUC of the five (0.6933) and visible overfitting relative to the ensemble. |
+| **kNN** | Once the nine categorical inputs are one-hot encoded, each record becomes a point in a very sparse, high-dimensional space where Euclidean distance loses meaning. The classifier still reaches 0.8962 accuracy by leaning on the majority class, yet its recall of 0.3403 shows it misses most true subscribers. |
+| **Naive Bayes** | Trains in a fraction of a second, but the independence assumption behind it clashes with correlated banking attributes (`housing`, `loan`) and with mutually exclusive one-hot columns. Its probability outputs are therefore poorly calibrated — acceptable recall, bottom-tier precision. |
+| **Random Forest (Ensemble)** | Bagging hundreds of decorrelated trees smooths out the variance that hurt the single tree and handles the mixed numeric/categorical space natively. It tops the table on AUC (0.9286) and Accuracy (0.9051) and achieves the best MCC, indicating the most balanced behavior on this skewed target. |
+| **Overall Winner for your dataset?** | **Random Forest (Ensemble)**. It leads on AUC, Accuracy, and MCC simultaneously, which makes it the safest choice for ranking campaign leads in production. |
 
 ---
 
 ## Additional Files Summary
+
 | File / Folder | Purpose |
 |---------------|---------|
-| `app.py` | Streamlit interactive web application for single and batch predictions. |
-| `requirements.txt` | Python dependencies (scikit-learn, pandas, streamlit, joblib, etc.). |
-| `test_data.csv` | Stratified hold-out test sample (auto-generated during training). |
-| `model/train_and_save.py` | End-to-end training script that downloads data, fits all 5 pipelines, evaluates metrics, and saves `.joblib` models. |
-| `model/predict.py` | Standalone CLI utility for batch inference. |
-| `model/metrics.json` | JSON file containing all computed evaluation metrics. |
-| `model/*.joblib` | Serialized preprocessing + classifier pipelines for deployment. |
+| `app.py` | Streamlit interactive web application for single and batch predictions, with confusion matrix and classification report on the test set |
+| `requirements.txt` | Python dependencies (scikit-learn, pandas, streamlit, joblib, matplotlib, etc.) |
+| `test_data.csv` | Stratified hold-out test sample (auto-generated during training) |
+| `model/train_and_save.py` | End-to-end training script that downloads data, fits all 5 pipelines, evaluates metrics, and saves `.joblib` models |
+| `model/predict.py` | Standalone CLI utility for batch inference |
+| `model/metrics.json` | JSON file containing all computed evaluation metrics |
+| `model/*.joblib` | Serialized preprocessing + classifier pipelines for deployment |
 
 ---
 
